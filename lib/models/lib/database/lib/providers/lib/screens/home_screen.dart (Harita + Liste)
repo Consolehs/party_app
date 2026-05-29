@@ -1,0 +1,102 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:provider/provider.dart';
+import 'package:party_app/providers/party_provider.dart';
+import 'package:party_app/widgets/party_card.dart';
+import 'package:party_app/screens/add_party_screen.dart';
+import 'package:party_app/screens/party_detail_screen.dart';
+
+class HomeScreen extends StatefulWidget {
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<PartyProvider>(context, listen: false).loadParties();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('PartiMerkez', style: TextStyle(fontFamily: 'Pacifico', fontSize: 26)),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(icon: Icon(Icons.map), text: 'Harita'),
+            Tab(icon: Icon(Icons.list), text: 'Liste'),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => Navigator.pushNamed(context, '/addParty'),
+          ),
+        ],
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildMapView(),
+          _buildListView(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMapView() {
+    final parties = Provider.of<PartyProvider>(context).parties;
+    return FlutterMap(
+      options: MapOptions(initialCenter: LatLng(41.0082, 28.9784), initialZoom: 12),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          userAgentPackageName: 'com.example.partyapp',
+        ),
+        MarkerLayer(
+          markers: parties.map((party) {
+            return Marker(
+              width: 80,
+              height: 80,
+              point: LatLng(party.latitude, party.longitude),
+              child: GestureDetector(
+                onTap: () => Navigator.pushNamed(context, '/partyDetail', arguments: party),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.deepPurple,
+                    shape: BoxShape.circle,
+                    boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                  ),
+                  child: const Icon(Icons.celebration, color: Colors.white, size: 30),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildListView() {
+    final parties = Provider.of<PartyProvider>(context).parties;
+    if (parties.isEmpty) {
+      return const Center(child: Text('Yakında parti yok. İlk sen ekle!'));
+    }
+    return ListView.builder(
+      itemCount: parties.length,
+      itemBuilder: (ctx, i) => PartyCard(party: parties[i], onTap: () {
+        Navigator.pushNamed(context, '/partyDetail', arguments: parties[i]);
+      }),
+    );
+  }
+}
