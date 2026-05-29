@@ -1,0 +1,32 @@
+import 'package:flutter/material.dart';
+import 'package:party_app/models/party.dart';
+import 'package:party_app/screens/invite_screen.dart';
+
+class PartyDetailScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final party = ModalRoute.of(context)!.settings.arguments as Party;
+    return Scaffold(
+      appBar: AppBar(title: Text(party.title)),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(party.description, style: const TextStyle(fontSize: 16)),
+            const SizedBox(height: 10),
+            Text('Tarih: ${DateTime.fromMillisecondsSinceEpoch(party.dateTime)}'),
+            Text('Adres: ${party.address}'),
+            Text('Kontenjan: ${party.capacity}'),
+            Text('Ücret: ${party.isPaid ? '${party.price} TL' : 'Ücretsiz'}'),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => Navigator.pushNamed(context, '/invite', arguments: party),
+              child: const Text('Arkadaşını Davet Et'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
